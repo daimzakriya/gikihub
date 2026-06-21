@@ -10,7 +10,6 @@
 // ─────────────────────────────────────────────────────────────
 
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
 // Paths that require authentication (admin panel)
@@ -67,17 +66,18 @@ export async function middleware(request: NextRequest) {
 
   // ── 5. Role enforcement for admin paths ───────────────────
   if (isAdminPath && user) {
-    // Use service-role client to bypass RLS (anon client hits recursive policy → 500)
-    const adminSupabase = createSupabaseAdmin(
+    // Use service-role client via @supabase/ssr (Edge-compatible) to bypass RLS
+    const adminSupabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
+      { cookies: { getAll: () => [], setAll: () => {} } }
     );
-    const { data: profile } = await adminSupabase
+    const { data: profileRaw } = await adminSupabase
       .from("profiles")
       .select("role, isActive")
       .eq("id", user.id)
       .single();
+    const profile = profileRaw as { role: string; isActive: boolean } | null;
 
     // Block deactivated accounts or users with no profile
     if (!profile || !profile.isActive) {
