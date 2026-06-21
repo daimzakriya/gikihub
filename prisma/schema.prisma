@@ -1,0 +1,293 @@
+// ─────────────────────────────────────────────────────────────
+// GIKI Plus — Prisma Schema
+// Database: Supabase PostgreSQL
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// AUTH & USERS
+// ─────────────────────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  MODERATOR
+  STAFF
+}
+
+// Mirrors auth.users — auto-created by Supabase trigger (see migrations/00_init.sql)
+model Profile {
+  id        String   @id @db.Uuid          // matches auth.users.id
+  email     String   @unique
+  name      String?
+  role      Role     @default(STAFF)
+  avatarUrl String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ROOM FINDER
+// ─────────────────────────────────────────────────────────────
+
+model Room {
+  id       String @id @default(uuid()) @db.Uuid
+  name     String                                // e.g. "CS-101", "EE Amphitheatre"
+  block    String                                // "CS Block", "EE Block", "Auditorium" …
+  type     String                                // "lecture_hall" | "lab" | "amphitheatre" | "exam_hall"
+  capacity Int?
+  floor    Int?
+
+  timetableSlots TimetableSlot[]
+
+  @@map("rooms")
+}
+
+model TimetableSlot {
+  id          String   @id @default(uuid()) @db.Uuid
+  roomId      String   @db.Uuid
+  day         String                              // "Monday" … "Saturday"
+  startTime   String                              // "08:00"
+  endTime     String                              // "09:30"
+  courseCode  String?
+  courseName  String?
+  section     String?
+  teacherName String?
+  semester    String                              // "Fall 2025", "Spring 2026"
+  uploadedAt  DateTime @default(now())
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("timetable_slots")
+}
+
+// ─────────────────────────────────────────────────────────────
+// PROFESSOR REVIEWS
+// ─────────────────────────────────────────────────────────────
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Professor {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String
+  department String                              // "CS" | "EE" | "ME" | "MME" | "ES"
+  courses    String[]                            // typical course codes
+  isActive   Boolean  @default(true)
+  approvedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  reviews ProfessorReview[]
+
+  @@map("professors")
+}
+
+model ProfessorReview {
+  id               String       @id @default(uuid()) @db.Uuid
+  professorId      String       @db.Uuid
+  overallRating    Float
+  teachingRating   Float
+  gradingRating    Float
+  workloadRating   Float
+  availableRating  Float
+  comment          String       @db.Text
+  courseCode       String?
+  semester         String?
+  ipHash           String                        // hashed, for dupe prevention
+  status           ReviewStatus @default(PENDING)
+  moderationNote   String?                       // filled by moderator on rejection
+  createdAt        DateTime     @default(now())
+
+  professor Professor @relation(fields: [professorId], references: [id], onDelete: Cascade)
+
+  @@map("professor_reviews")
+}
+
+// ─────────────────────────────────────────────────────────────
+// GIKI YAADEIN (CAMPUS MEMORIES)
+// ─────────────────────────────────────────────────────────────
+
+enum MemoryType {
+  STORY
+  MILESTONE
+  FUNNY
+  PHOTO
+}
+
+model Memory {
+  id           String       @id @default(uuid()) @db.Uuid
+  locationName String
+  lat          Float
+  lng          Float
+  message      String       @db.VarChar(500)
+  type         MemoryType   @default(STORY)
+  imageUrl     String?
+  likes        Int          @default(0)
+  status       ReviewStatus @default(PENDING)
+  ipHash       String
+  createdAt    DateTime     @default(now())
+
+  memoryLikes MemoryLike[]
+
+  @@map("memories")
+}
+
+model MemoryLike {
+  id        String   @id @default(uuid()) @db.Uuid
+  memoryId  String   @db.Uuid
+  ipHash    String
+  createdAt DateTime @default(now())
+
+  memory Memory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  @@unique([memoryId, ipHash])
+  @@map("memory_likes")
+}
+
+// ─────────────────────────────────────────────────────────────
+// MESS MENU
+// Admin uploads an image or PDF of the physical menu board.
+// Only the latest entry is shown publicly.
+// Older entries are kept as history.
+// ─────────────────────────────────────────────────────────────
+
+model MessMenu {
+  id           String   @id @default(uuid()) @db.Uuid
+  label        String                            // e.g. "Week of June 19, 2026" — shown as caption
+  fileUrl      String                            // Supabase Storage public URL
+  fileName     String
+  fileType     String                            // "image" | "pdf"
+  fileSize     Int                               // bytes
+  uploadedById String   @db.Uuid                // Profile.id
+  createdAt    DateTime @default(now())
+
+  @@map("mess_menus")
+}
+
+// ─────────────────────────────────────────────────────────────
+// CAMPUS EVENTS
+// ─────────────────────────────────────────────────────────────
+
+model CampusEvent {
+  id          String       @id @default(uuid()) @db.Uuid
+  title       String
+  description String       @db.Text
+  date        DateTime     @db.Date
+  startTime   String?
+  endTime     String?
+  location    String
+  category    String                            // "academic"|"sports"|"social"|"career"|"exam"
+  department  String?
+  organizer   String
+  status      ReviewStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+
+  @@map("campus_events")
+}
+
+// ─────────────────────────────────────────────────────────────
+// EXAM SCHEDULES  ← NEW
+// ─────────────────────────────────────────────────────────────
+
+enum ExamType {
+  MID
+  FINAL
+  QUIZ
+  OTHER
+}
+
+model ExamSchedule {
+  id           String   @id @default(uuid()) @db.Uuid
+  title        String                            // e.g. "Mid Exam Schedule — Fall 2026"
+  examType     ExamType @default(MID)
+  semester     String                            // "Fall 2026"
+  fileUrl      String                            // Supabase Storage URL
+  fileName     String
+  fileSize     Int                               // bytes
+  notifiedAt   DateTime?                         // when push was sent
+  uploadedById String   @db.Uuid                // Profile.id of uploader
+  createdAt    DateTime @default(now())
+
+  @@map("exam_schedules")
+}
+
+// ─────────────────────────────────────────────────────────────
+// LOST & FOUND
+// ─────────────────────────────────────────────────────────────
+
+model LostFoundPost {
+  id           String   @id @default(uuid()) @db.Uuid
+  type         String                            // "lost" | "found"
+  title        String
+  description  String   @db.Text
+  category     String                            // "electronics"|"id_card"|"keys"|"clothing"|"books"|"other"
+  location     String
+  imageUrl     String?
+  contactToken String   @unique @default(uuid())
+  resolved     Boolean  @default(false)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  messages LostFoundMessage[]
+
+  @@map("lost_found_posts")
+}
+
+model LostFoundMessage {
+  id          String   @id @default(uuid()) @db.Uuid
+  postId      String   @db.Uuid
+  senderToken String
+  message     String   @db.Text
+  createdAt   DateTime @default(now())
+
+  post LostFoundPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("lost_found_messages")
+}
+
+// ─────────────────────────────────────────────────────────────
+// PUSH NOTIFICATIONS
+// ─────────────────────────────────────────────────────────────
+
+model PushSubscription {
+  id           String   @id @default(uuid()) @db.Uuid
+  endpoint     String   @unique
+  p256dhKey    String
+  authKey      String
+  ipHash       String?
+  createdAt    DateTime @default(now())
+
+  @@map("push_subscriptions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// FEEDBACK / CONTACT
+// ─────────────────────────────────────────────────────────────
+
+model Feedback {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  email     String
+  subject   String
+  message   String   @db.Text
+  category  String                              // "bug"|"room_finder"|"professor_review"|"general"|"feature_request"
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("feedback")
+}
