@@ -28,11 +28,11 @@ function StarDisplay({ rating }: { rating: number }) {
 }
 
 const RATING_LABELS: Record<string, string> = {
-  ratingTeach:   "Teaching Quality",
-  ratingGrade:   "Grading Fairness",
-  ratingLoad:    "Course Workload",
-  ratingComm:    "Communication",
-  ratingOverall: "Overall",
+  teachingRating:  "Teaching Quality",
+  gradingRating:   "Grading Fairness",
+  workloadRating:  "Course Workload",
+  availableRating: "Communication",
+  overallRating:   "Overall",
 };
 
 export default async function ProfessorDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -53,11 +53,11 @@ export default async function ProfessorDetailPage({ params }: { params: Promise<
   const reviews    = professor.reviews;
   const count      = reviews.length;
   const avgRatings = count > 0 ? {
-    ratingTeach:    reviews.reduce((s, r) => s + r.ratingTeach,    0) / count,
-    ratingGrade:    reviews.reduce((s, r) => s + r.ratingGrade,    0) / count,
-    ratingLoad:     reviews.reduce((s, r) => s + r.ratingLoad,     0) / count,
-    ratingComm:     reviews.reduce((s, r) => s + r.ratingComm,     0) / count,
-    ratingOverall:  reviews.reduce((s, r) => s + r.ratingOverall,  0) / count,
+    teachingRating:  reviews.reduce((s, r) => s + r.teachingRating,  0) / count,
+    gradingRating:   reviews.reduce((s, r) => s + r.gradingRating,   0) / count,
+    workloadRating:  reviews.reduce((s, r) => s + r.workloadRating,  0) / count,
+    availableRating: reviews.reduce((s, r) => s + r.availableRating, 0) / count,
+    overallRating:   reviews.reduce((s, r) => s + r.overallRating,   0) / count,
   } : null;
 
   return (
@@ -93,7 +93,7 @@ export default async function ProfessorDetailPage({ params }: { params: Promise<
 
           {avgRatings && (
             <div className="text-center bg-amber-50 border border-amber-200 rounded-2xl p-5 flex-shrink-0">
-              <p className="text-4xl font-black text-amber-500 leading-none">{avgRatings.ratingOverall.toFixed(1)}</p>
+              <p className="text-4xl font-black text-amber-500 leading-none">{avgRatings.overallRating.toFixed(1)}</p>
               <p className="text-xs text-amber-700 mt-1.5 font-medium">Overall Rating</p>
               <p className="text-xs text-gray-400 mt-0.5">{count} review{count !== 1 ? "s" : ""}</p>
             </div>
@@ -136,7 +136,7 @@ export default async function ProfessorDetailPage({ params }: { params: Promise<
           <div key={review.id} className="card p-5 mb-4">
             <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
               <div>
-                <StarDisplay rating={review.ratingOverall} />
+                <StarDisplay rating={review.overallRating} />
                 <div className="flex gap-3 mt-2 text-xs text-gray-500 flex-wrap">
                   {review.courseCode && (
                     <span className="flex items-center gap-1">
@@ -161,10 +161,10 @@ export default async function ProfessorDetailPage({ params }: { params: Promise<
 
             <div className="grid grid-cols-2 gap-2 mb-3">
               {[
-                { label: "Teaching",      val: review.ratingTeach   },
-                { label: "Grading",       val: review.ratingGrade   },
-                { label: "Workload",      val: review.ratingLoad    },
-                { label: "Communication", val: review.ratingComm    },
+                { label: "Teaching",      val: review.teachingRating  },
+                { label: "Grading",       val: review.gradingRating   },
+                { label: "Workload",      val: review.workloadRating  },
+                { label: "Communication", val: review.availableRating },
               ].map((r) => (
                 <div key={r.label} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 text-xs">
                   <span className="text-gray-500">{r.label}</span>

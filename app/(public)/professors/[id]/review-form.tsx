@@ -3,11 +3,11 @@
 import { useState } from "react";
 
 const RATING_FIELDS: { key: string; label: string; desc: string }[] = [
-  { key: "ratingTeach",   label: "Teaching Quality",   desc: "How well did they explain concepts?" },
-  { key: "ratingGrade",   label: "Grading Fairness",   desc: "Were grades fair and transparent?" },
-  { key: "ratingLoad",    label: "Course Workload",     desc: "Was the workload manageable?" },
-  { key: "ratingComm",    label: "Communication",       desc: "Were they approachable and responsive?" },
-  { key: "ratingOverall", label: "Overall Rating",      desc: "Overall, how was your experience?" },
+  { key: "teachingRating",  label: "Teaching Quality", desc: "How well did they explain concepts?" },
+  { key: "gradingRating",   label: "Grading Fairness", desc: "Were grades fair and transparent?" },
+  { key: "workloadRating",  label: "Course Workload",  desc: "Was the workload manageable?" },
+  { key: "availableRating", label: "Communication",    desc: "Were they approachable and responsive?" },
+  { key: "overallRating",   label: "Overall Rating",   desc: "Overall, how was your experience?" },
 ];
 
 interface FormState {

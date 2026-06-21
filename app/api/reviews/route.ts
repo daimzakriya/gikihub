@@ -5,15 +5,15 @@ import { getIp, hashIp } from "@/lib/utils";
 import { reviewLimiter, checkRateLimit } from "@/lib/rate-limit";
 
 const ReviewSchema = z.object({
-  professorId:  z.string().uuid(),
-  courseCode:   z.string().max(20).optional(),
-  semester:     z.string().max(20).optional(),
-  ratingTeach:  z.number().int().min(1).max(5),
-  ratingGrade:  z.number().int().min(1).max(5),
-  ratingLoad:   z.number().int().min(1).max(5),
-  ratingComm:   z.number().int().min(1).max(5),
-  ratingOverall:z.number().int().min(1).max(5),
-  comment:      z.string().max(1000).optional(),
+  professorId:     z.string().uuid(),
+  courseCode:      z.string().max(20).optional(),
+  semester:        z.string().max(20).optional(),
+  teachingRating:  z.number().int().min(1).max(5),
+  gradingRating:   z.number().int().min(1).max(5),
+  workloadRating:  z.number().int().min(1).max(5),
+  availableRating: z.number().int().min(1).max(5),
+  overallRating:   z.number().int().min(1).max(5),
+  comment:         z.string().max(1000).optional(),
 });
 
 export async function POST(req: NextRequest) {
