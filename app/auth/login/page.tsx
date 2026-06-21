@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Image from "next/image";
 import { useActionState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
@@ -7,21 +8,19 @@ import { loginAction, type LoginState } from "./actions";
 
 const initialState: LoginState = {};
 
-export default function LoginPage() {
+function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo   = searchParams.get("redirect") ?? "/admin/dashboard";
   const errorParam   = searchParams.get("error");
 
   const [state, formAction, isPending] = useActionState(loginAction, initialState);
 
-  // Full-page navigate so all cookies (set by the Server Action) are sent with the request
   useEffect(() => {
     if (state.redirectTo) {
       window.location.replace(state.redirectTo);
     }
   }, [state.redirectTo]);
 
-  // Map URL error codes to human-readable messages
   const urlError =
     errorParam === "account_inactive"
       ? "Your account has been deactivated."
@@ -43,7 +42,6 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
-          {/* URL-based error banner */}
           {urlError && (
             <div className="mb-5 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
               {urlError}
@@ -51,30 +49,20 @@ export default function LoginPage() {
           )}
 
           <form action={formAction} className="space-y-5">
-            {/* Hidden redirect field */}
             <input type="hidden" name="redirect" value={redirectTo} />
 
-            {/* Generic form error */}
             {state.error && (
               <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
                 {state.error}
               </div>
             )}
 
-            {/* Email */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
-              >
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Email address
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
+                id="email" name="email" type="email" autoComplete="email" required
                 className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400
                            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
                            disabled:opacity-50 disabled:cursor-not-allowed"
@@ -82,26 +70,16 @@ export default function LoginPage() {
                 disabled={isPending}
               />
               {state.fieldErrors?.email && (
-                <p className="mt-1 text-xs text-red-600">
-                  {state.fieldErrors.email[0]}
-                </p>
+                <p className="mt-1 text-xs text-red-600">{state.fieldErrors.email[0]}</p>
               )}
             </div>
 
-            {/* Password */}
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
-              >
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Password
               </label>
               <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
+                id="password" name="password" type="password" autoComplete="current-password" required
                 className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400
                            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
                            disabled:opacity-50 disabled:cursor-not-allowed"
@@ -109,13 +87,10 @@ export default function LoginPage() {
                 disabled={isPending}
               />
               {state.fieldErrors?.password && (
-                <p className="mt-1 text-xs text-red-600">
-                  {state.fieldErrors.password[0]}
-                </p>
+                <p className="mt-1 text-xs text-red-600">{state.fieldErrors.password[0]}</p>
               )}
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={isPending}
@@ -129,17 +104,23 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Rate limit note */}
           <p className="mt-5 text-center text-xs text-gray-400">
             5 failed attempts will lock you out for 15 minutes.
           </p>
         </div>
 
-        {/* Footer */}
         <p className="text-center text-xs text-brand-400 mt-6">
           GIKI Plus · Admin Panel · Secure Access Only
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

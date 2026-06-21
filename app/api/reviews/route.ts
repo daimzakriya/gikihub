@@ -48,7 +48,19 @@ export async function POST(req: NextRequest) {
   }
 
   const review = await db.professorReview.create({
-    data: { professorId, ipHash, status: "PENDING", ...rest },
+    data: {
+      professorId,
+      ipHash,
+      status:          "PENDING",
+      teachingRating:  rest.teachingRating,
+      gradingRating:   rest.gradingRating,
+      workloadRating:  rest.workloadRating,
+      availableRating: rest.availableRating,
+      overallRating:   rest.overallRating,
+      courseCode:      rest.courseCode  ?? "",
+      semester:        rest.semester    ?? "",
+      comment:         rest.comment     ?? "",
+    },
   });
 
   return NextResponse.json({ success: true, id: review.id }, { status: 201 });

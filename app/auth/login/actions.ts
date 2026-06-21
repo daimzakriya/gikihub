@@ -62,11 +62,12 @@ export async function loginAction(
 
   // ── 4. Check profile exists and is active + has a role ────
   const adminClient = createAdminClient();
-  const { data: profile } = await adminClient
+  const { data: profileRaw } = await adminClient
     .from("profiles")
     .select("role, isActive")
     .eq("id", data.user.id)
     .single();
+  const profile = profileRaw as { role: string; isActive: boolean } | null;
 
   if (!profile) {
     await supabase.auth.signOut();

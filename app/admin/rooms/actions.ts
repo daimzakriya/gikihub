@@ -41,24 +41,26 @@ const SlotSchema = z.object({
   semester:    z.string().default(""),
 });
 
-export async function uploadTimetableAction(_: unknown, formData: FormData) {
+type UploadState = { error: string; success: boolean; count: number };
+
+export async function uploadTimetableAction(_state: UploadState, formData: FormData): Promise<UploadState> {
   try {
     await requireAdmin();
 
     const file = formData.get("file") as File | null;
-    if (!file || file.size === 0) return { error: "Please select a CSV file." };
-    if (!file.name.endsWith(".csv")) return { error: "Only CSV files are accepted." };
-    if (file.size > 5 * 1024 * 1024) return { error: "File must be under 5 MB." };
+    if (!file || file.size === 0) return { error: "Please select a CSV file.", success: false, count: 0 };
+    if (!file.name.endsWith(".csv")) return { error: "Only CSV files are accepted.", success: false, count: 0 };
+    if (file.size > 5 * 1024 * 1024) return { error: "File must be under 5 MB.", success: false, count: 0 };
 
     const text = await file.text();
     const parsed = Papa.parse(text, { header: true, skipEmptyLines: true, transformHeader: (h) => h.trim() });
 
     if (parsed.errors.length > 0) {
-      return { error: `CSV parse error: ${parsed.errors[0].message}` };
+      return { error: `CSV parse error: ${parsed.errors[0].message}`, success: false, count: 0 };
     }
 
     const rows = parsed.data as Record<string, string>[];
-    if (rows.length === 0) return { error: "CSV file is empty." };
+    if (rows.length === 0) return { error: "CSV file is empty.", success: false, count: 0 };
 
     // Normalize headers (case-insensitive)
     const normalizedRows = rows.map((row) => {
@@ -88,7 +90,7 @@ export async function uploadTimetableAction(_: unknown, formData: FormData) {
 
     const badRows = slotParsed.map((p, i) => (!p.success ? i + 2 : null)).filter(Boolean);
     if (badRows.length > 0) {
-      return { error: `Invalid data in rows: ${badRows.slice(0, 5).join(", ")}. Check required columns.` };
+      return { error: `Invalid data in rows: ${badRows.slice(0, 5).join(", ")}. Check required columns.`, success: false, count: 0 };
     }
 
     const slots = slotParsed.map((p) => (p as { success: true; data: z.infer<typeof SlotSchema> }).data);
@@ -147,10 +149,10 @@ export async function uploadTimetableAction(_: unknown, formData: FormData) {
 
     revalidatePath("/room-finder");
     revalidatePath("/admin/rooms");
-    return { success: true, count: slots.length };
+    return { success: true, count: slots.length, error: "" };
   } catch (err) {
     console.error("[uploadTimetableAction]", err);
-    return { error: err instanceof Error ? err.message : "Upload failed." };
+    return { error: err instanceof Error ? err.message : "Upload failed.", success: false, count: 0 };
   }
 }
 

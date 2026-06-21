@@ -28,7 +28,9 @@ const AddProfessorSchema = z.object({
   courses:    z.string().transform((v) => v.split(",").map((s) => s.trim()).filter(Boolean)),
 });
 
-export async function addProfessorAction(_: unknown, formData: FormData) {
+type ActionState = { error: string; success: boolean };
+
+export async function addProfessorAction(_state: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await requireAdmin();
     const parsed = AddProfessorSchema.safeParse({
@@ -36,16 +38,16 @@ export async function addProfessorAction(_: unknown, formData: FormData) {
       department: formData.get("department"),
       courses:    formData.get("courses") ?? "",
     });
-    if (!parsed.success) return { error: "Invalid data: " + JSON.stringify(parsed.error.flatten().fieldErrors) };
+    if (!parsed.success) return { error: "Invalid data: " + JSON.stringify(parsed.error.flatten().fieldErrors), success: false };
 
     await db.professor.create({
       data: { ...parsed.data, approvedAt: new Date() },
     });
     revalidatePath("/professors");
     revalidatePath("/admin/professors");
-    return { success: true };
+    return { success: true, error: "" };
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Failed." };
+    return { error: err instanceof Error ? err.message : "Failed.", success: false };
   }
 }
 

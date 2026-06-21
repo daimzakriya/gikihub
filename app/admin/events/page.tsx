@@ -12,7 +12,7 @@ export default async function AdminEventsPage() {
   });
 
   const upcoming  = events.filter((e) => new Date(e.date) >= new Date()).length;
-  const published = events.filter((e) => e.status === "PUBLISHED").length;
+  const published = events.filter((e) => e.status === "APPROVED").length;
 
   return (
     <div className="p-6 max-w-4xl space-y-8">
@@ -94,7 +94,7 @@ export default async function AdminEventsPage() {
                       <span className="badge badge-blue">{event.category}</span>
                     </td>
                     <td>
-                      <span className={`badge ${event.status === "PUBLISHED" ? "badge-green" : "badge-gray"}`}>
+                      <span className={`badge ${event.status === "APPROVED" ? "badge-green" : "badge-gray"}`}>
                         {event.status}
                       </span>
                     </td>

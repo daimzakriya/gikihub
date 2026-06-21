@@ -27,7 +27,9 @@ const EventSchema = z.object({
   organizer:   z.string().max(100).optional(),
 });
 
-export async function createEventAction(_: unknown, formData: FormData) {
+type ActionState = { error: string; success: boolean };
+
+export async function createEventAction(_state: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await requireAdmin();
     const parsed = EventSchema.safeParse({
@@ -40,19 +42,26 @@ export async function createEventAction(_: unknown, formData: FormData) {
       category:    formData.get("category") ?? "Other",
       organizer:   formData.get("organizer") || undefined,
     });
-    if (!parsed.success) return { error: "Invalid data." };
+    if (!parsed.success) return { error: "Invalid data.", success: false };
 
+    const d = parsed.data;
     await db.campusEvent.create({
       data: {
-        ...parsed.data,
-        date:   new Date(parsed.data.date),
-        status: "PUBLISHED",
+        title:       d.title,
+        date:        new Date(d.date),
+        startTime:   d.startTime,
+        location:    d.location,
+        category:    d.category,
+        status:      "APPROVED",
+        description: d.description ?? "",
+        endTime:     d.endTime    ?? "",
+        organizer:   d.organizer  ?? "",
       },
     });
     revalidatePath("/events");
     revalidatePath("/admin/events");
-    return { success: true };
+    return { success: true, error: "" };
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Failed." };
+    return { error: err instanceof Error ? err.message : "Failed.", success: false };
   }
 }
