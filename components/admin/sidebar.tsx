@@ -113,7 +113,7 @@ export function AdminSidebar({ role, userName, userEmail }: SidebarProps) {
       ? pathname === item.href
       : pathname.startsWith(item.href);
 
-  const initial = (userName ?? userEmail || "?")[0].toUpperCase();
+  const initial = ((userName ?? userEmail) || "?")[0].toUpperCase();
 
   return (
     <aside className="flex flex-col w-64 min-h-screen bg-brand-950 text-white flex-shrink-0">
